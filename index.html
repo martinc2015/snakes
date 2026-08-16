@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-image: url('giant_snake_bg.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #262421;
+        }
+        .page3-container {
+            width: 100%;
+            margin-top: -2.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #81c784;
+            text-align: center;
+            font-size: 3.2rem;
+            margin: 0 0 0.5rem 0;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        }
+        .game-layout {
+            display: flex;
+            gap: 2.5rem;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+            max-width: 1050px;
+            width: 100%;
+            padding: 0 1rem;
+        }
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .snake-score-container {
+            display: flex;
+            align-items: baseline;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 0.8rem;
+        }
+        .snake-score {
+            color: #ffffff;
+            font-size: 2.6rem;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
+            position: relative;
+        }
+        .snake-score span#score {
+            color: #f6e165;
+            display: inline-block;
+        }
+        .diff-info {
+            color: rgba(238, 238, 210, 0.75);
+            font-size: 1.15rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        #diff-badge {
+            color: #eeeed2;
+            font-weight: 700;
+        }
+        .change-diff-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(238, 238, 210, 0.35);
+            color: #eeeed2;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .change-diff-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: #f6e165;
+            transform: translateY(-1px);
+        }
+        .floating-point {
+            position: absolute;
+            left: 100%;
+            top: -6px;
+            margin-left: 10px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #769656;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+            pointer-events: none;
+            animation: floatPoints 0.55s ease-out forwards;
+        }
+        @keyframes floatPoints {
+            0% { opacity: 0; transform: translateY(10px) scale(0.6); }
+            30% { opacity: 1; transform: translateY(0) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-24px) scale(1); }
+        }
+        .score-bump {
+            animation: scorePop 0.2s ease-out;
+        }
+        @keyframes scorePop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        #snake-canvas {
+            background-color: var(--board-border);
+            border-radius: 8px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            display: block;
+        }
+        .snake-controls {
+            margin-top: 1.5rem;
+        }
+        .ranking-area {
+            background-color: var(--board-border);
+            padding: 1.8rem;
+            border-radius: 8px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            color: var(--light-square);
+            min-width: 320px;
+            margin-top: 0;
+        }
+        .ranking-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+        }
+        .ranking-header h2 {
+            margin: 0;
+            font-size: 1.7rem;
+            text-align: left;
+        }
+        .clear-btn {
+            background: none;
+            border: 1px solid #e24e4e;
+            color: #e24e4e;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .clear-btn:hover {
+            background: #e24e4e;
+            color: #fff;
+        }
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .ranking-table th, .ranking-table td {
+            padding: 0.85rem 0.6rem;
+            font-size: 1.15rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(238, 238, 210, 0.1);
+        }
+        .ranking-table th {
+            color: #f6e165;
+            font-size: 1.2rem;
+        }
+        
+        /* ---------- CELEBRACIÓN RANK 1 ---------- */
+        .congrats-banner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background-color: #f6e165;
+            color: #262421;
+            padding: 2rem 4rem;
+            border-radius: 12px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.8);
+            z-index: 3500;
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s;
+        }
+
+        .congrats-banner.gold {
+            background: linear-gradient(135deg, #ffe066 0%, #f5c518 100%);
+            border: 4px solid #b8860b;
+            color: #262421;
+        }
+
+        .congrats-banner.silver {
+            background: linear-gradient(135deg, #f3f4f6 0%, #9ca3af 100%);
+            border: 4px solid #4b5563;
+            color: #1f2937;
+        }
+
+        .congrats-banner.bronze {
+            background: linear-gradient(135deg, #d97706 0%, #78350f 100%);
+            border: 4px solid #78350f;
+            color: #ffffff;
+        }
+
+        .congrats-banner.show {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 3400;
+        }
+
+        @keyframes pulseGordi {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(38, 36, 33, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(38, 36, 33, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(38, 36, 33, 0); }
+        }
+
+        .gordi-img {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 5px solid #262421;
+            object-fit: cover;
+            margin-bottom: 1rem;
+            animation: pulseGordi 1.5s infinite ease-in-out;
+        }
+
+        /* ---------- MODAL DIFICULTAD ---------- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background: var(--board-border);
+            padding: 2.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,1);
+            border: 2px solid #f6e165;
+            max-width: 400px;
+            width: 90%;
+        }
+        .modal-content h2 {
+            color: #eeeed2;
+            margin: 0 0 1.5rem 0;
+            font-size: 2rem;
+        }
+        .diff-btn {
+            display: block;
+            width: 100%;
+            padding: 1rem;
+            margin: 0.8rem 0;
+            background: var(--dark-square);
+            color: #eeeed2;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .diff-btn:hover {
+            background: #769656;
+            transform: translateY(-2px);
+        }
+        .diff-btn:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div id="difficulty-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modal-title">🐍 ¡A Jugar!</h2>
+            <div id="name-input-section" style="margin-bottom: 1.2rem; text-align: left;">
+                <label for="player-name-input" style="color: #eeeed2; display: block; margin-bottom: 0.4rem; font-size: 0.95rem;">Tu Nombre:</label>
+                <input type="text" id="player-name-input" maxlength="15" style="width: 100%; box-sizing: border-box; padding: 0.75rem; border-radius: 6px; border: 2px solid #769656; background: #262421; color: #f6e165; font-size: 1.1rem; font-weight: bold; outline: none;">
+            </div>
+            <div style="color: #eeeed2; font-size: 0.95rem; margin-bottom: 0.6rem; text-align: left;">Elige Dificultad:</div>
+            <button id="btn-easy" class="diff-btn">Fácil (+5 pts)</button>
+            <button id="btn-normal" class="diff-btn">Normal (+10 pts)</button>
+            <button id="btn-hard" class="diff-btn">Difícil (+15 pts)</button>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+    <div id="congrats-banner" class="congrats-banner">
+        <img src="gordi.png" alt="La Gordi" class="gordi-img"><br>
+        ¡NUEVO RÉCORD #1!<br>
+        <span style="font-size: 1.5rem">¡Felicidades! 🎉</span>
+    </div>
+
+
+    <div class="page3-container">
+        <h1>Snake</h1>
+        <div class="game-layout">
+            <div class="game-area">
+                <div class="snake-score-container">
+                    <div class="snake-score">
+                        Puntaje: <span id="score">0</span>
+                    </div>
+                    <div class="diff-info">
+                        Nivel: <span id="diff-badge">Normal</span>
+                        <button id="open-diff-btn" class="change-diff-btn">Cambiar</button>
+                    </div>
+                </div>
+                <canvas id="snake-canvas" width="625" height="625"></canvas>
+                <div class="snake-controls">
+                    <button id="start-btn" class="ttt-reset">Iniciar Juego</button>
+                </div>
+            </div>
+            
+            <div class="ranking-area">
+                <div class="ranking-header">
+                    <h2>🏆 Top 10</h2>
+                </div>
+                <table class="ranking-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Jugador</th>
+                            <th>Puntaje</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="snake.js"></script>
+</body>
+</html>
