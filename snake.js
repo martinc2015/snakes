@@ -383,6 +383,13 @@ function placeFood() {
     food = newFood;
 }
 
+function changeDirection(dir) {
+    if (dir === 'up' && dy !== 1) { nextDx = 0; nextDy = -1; }
+    if (dir === 'down' && dy !== -1) { nextDx = 0; nextDy = 1; }
+    if (dir === 'left' && dx !== 1) { nextDx = -1; nextDy = 0; }
+    if (dir === 'right' && dx !== -1) { nextDx = 1; nextDy = 0; }
+}
+
 document.addEventListener('keydown', (e) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
         e.preventDefault();
@@ -393,10 +400,10 @@ document.addEventListener('keydown', (e) => {
     }
     if (!gameActive) return;
 
-    if (e.code === 'ArrowUp' && dy !== 1) { nextDx = 0; nextDy = -1; }
-    if (e.code === 'ArrowDown' && dy !== -1) { nextDx = 0; nextDy = 1; }
-    if (e.code === 'ArrowLeft' && dx !== 1) { nextDx = -1; nextDy = 0; }
-    if (e.code === 'ArrowRight' && dx !== -1) { nextDx = 1; nextDy = 0; }
+    if (e.code === 'ArrowUp') changeDirection('up');
+    if (e.code === 'ArrowDown') changeDirection('down');
+    if (e.code === 'ArrowLeft') changeDirection('left');
+    if (e.code === 'ArrowRight') changeDirection('right');
 });
 
 startBtn.addEventListener('click', resetGame);
@@ -404,27 +411,21 @@ startBtn.addEventListener('click', resetGame);
 // --- CONTROLES TOUCH EN MÓVIL ---
 let touchStartX = 0;
 let touchStartY = 0;
-const minSwipeDistance = 30;
+const minSwipeDistance = 15; // Bajado a 15px
 
-canvas.addEventListener('touchstart', (e) => {
-    if (gameActive) {
-        e.preventDefault();
-    }
+window.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
-}, { passive: false });
+}, { passive: true });
 
-canvas.addEventListener('touchmove', (e) => {
+window.addEventListener('touchmove', (e) => {
+    // Si la partida está activa, evitar scroll para permitir jugar con swipes por toda la pantalla
     if (gameActive) {
         e.preventDefault();
     }
 }, { passive: false });
 
-canvas.addEventListener('touchend', (e) => {
-    if (gameActive) {
-        e.preventDefault();
-    }
-    
+window.addEventListener('touchend', (e) => {
     if (!gameActive) return;
 
     const touchEndX = e.changedTouches[0].clientX;
@@ -433,24 +434,23 @@ canvas.addEventListener('touchend', (e) => {
     const diffX = touchEndX - touchStartX;
     const diffY = touchEndY - touchStartY;
 
+    // Verificar si supera la distancia mínima de 15px
     if (Math.abs(diffX) > minSwipeDistance || Math.abs(diffY) > minSwipeDistance) {
+        e.preventDefault(); // Prevenir comportamiento por defecto solo si es un deslizamiento válido
+        
         if (Math.abs(diffX) > Math.abs(diffY)) {
             // Deslizamiento horizontal
-            if (diffX > 0 && dx !== -1) {
-                nextDx = 1;
-                nextDy = 0;
-            } else if (diffX < 0 && dx !== 1) {
-                nextDx = -1;
-                nextDy = 0;
+            if (diffX > 0) {
+                changeDirection('right');
+            } else {
+                changeDirection('left');
             }
         } else {
             // Deslizamiento vertical
-            if (diffY > 0 && dy !== -1) {
-                nextDx = 0;
-                nextDy = 1;
-            } else if (diffY < 0 && dy !== 1) {
-                nextDx = 0;
-                nextDy = -1;
+            if (diffY > 0) {
+                changeDirection('down');
+            } else {
+                changeDirection('up');
             }
         }
     }
