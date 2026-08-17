@@ -413,14 +413,40 @@ function getDreamloUrl(path) {
     return `https://dreamlo.com/lb/${path}`;
 }
 
-async function loadRanking() {
-    rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity:0.6; color: rgba(238,238,210,0.6);">Cargando Top 10...</td></tr>';
+async function loadRanking(isBackground = false) {
+    if (!isBackground) {
+        // stale-while-revalidate: Cargar caché local primero para respuesta instantánea
+        const cached = localStorage.getItem('snake_online_ranking_cache');
+        if (cached) {
+            try {
+                onlineRanking = JSON.parse(cached);
+                renderRanking(onlineRanking);
+            } catch (e) {
+                console.warn('Error parsing cached ranking:', e);
+            }
+        }
+        
+        // Si no hay caché cargada, mostrar el spinner/cargando
+        if (!onlineRanking || onlineRanking.length === 0) {
+            rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity:0.6; color: rgba(238,238,210,0.6);">Cargando Top 10...</td></tr>';
+        }
+    }
+
     if (!DREAMLO_PUBLIC_KEY || DREAMLO_PUBLIC_KEY.trim() === '') {
         renderLocalRanking();
         return;
     }
+
+    // Timeout de 2.5s con AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+
     try {
-        const res = await fetch(getDreamloUrl(`${DREAMLO_PUBLIC_KEY}/json/10`));
+        const res = await fetch(getDreamloUrl(`${DREAMLO_PUBLIC_KEY}/json/10`), {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
         const data = await res.json();
         let entries = [];
         if (data && data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry) {
@@ -431,12 +457,24 @@ async function loadRanking() {
             name: (e.name || 'Jugador').split('__')[0],
             score: parseInt(e.score, 10) || 0
         }));
-        // Ordenar siempre de mayor a menor
         onlineRanking.sort((a, b) => b.score - a.score);
+
+        // Guardar en la caché local
+        localStorage.setItem('snake_online_ranking_cache', JSON.stringify(onlineRanking));
+
         renderRanking(onlineRanking);
     } catch (err) {
-        console.warn('No se pudo conectar con Dreamlo, usando ranking local:', err);
-        renderLocalRanking();
+        clearTimeout(timeoutId);
+        if (err.name === 'AbortError') {
+            console.warn('La petición a Dreamlo excedió el timeout de 2.5s. Usando datos cacheados.');
+        } else {
+            console.warn('No se pudo conectar con Dreamlo, usando ranking local/caché:', err);
+        }
+
+        // Si falló la red y no tenemos nada en caché/memoria, mostramos el ranking local
+        if (!onlineRanking || onlineRanking.length === 0) {
+            renderLocalRanking();
+        }
     }
 }
 
@@ -498,16 +536,27 @@ async function saveScore(finalScore) {
         myRank = 3;
     }
 
-    // 1. Guardar en Dreamlo Online permitiendo múltiples récords por jugador
+    // 1. Guardar en Dreamlo Online con Actualización Optimista
     if (DREAMLO_PRIVATE_KEY && DREAMLO_PRIVATE_KEY !== 'TU_CLAVE_PRIVADA_AQUI') {
-        try {
-            const cleanName = (playerName || 'Jugador').replace(/[^a-zA-Z0-9]/g, '');
-            const uniqueEntryName = `${cleanName}__${Date.now().toString(36)}`;
-            await fetch(getDreamloUrl(`${DREAMLO_PRIVATE_KEY}/add/${uniqueEntryName}/${finalScore}`));
-            await loadRanking();
-        } catch (e) {
-            console.error('Error guardando en Dreamlo:', e);
-        }
+        const cleanName = (playerName || 'Jugador').replace(/[^a-zA-Z0-9]/g, '');
+        
+        // Entrada optimista
+        const optimisticEntry = { name: cleanName, score: finalScore };
+        
+        // Agregar, ordenar y limitar a Top 10 en memoria
+        onlineRanking.push(optimisticEntry);
+        onlineRanking.sort((a, b) => b.score - a.score);
+        onlineRanking = onlineRanking.slice(0, 10);
+        
+        // Guardar al instante en caché y renderizar en la UI
+        localStorage.setItem('snake_online_ranking_cache', JSON.stringify(onlineRanking));
+        renderRanking(onlineRanking);
+
+        // Realizar la petición de red de fondo
+        const uniqueEntryName = `${cleanName}__${Date.now().toString(36)}`;
+        fetch(getDreamloUrl(`${DREAMLO_PRIVATE_KEY}/add/${uniqueEntryName}/${finalScore}`))
+            .then(() => loadRanking(true)) // Refrescar en background
+            .catch(e => console.error('Error guardando en Dreamlo:', e));
     } else {
         // Fallback local
         let localRank = JSON.parse(localStorage.getItem('snakeRanking')) || [];
