@@ -408,14 +408,9 @@ const DREAMLO_PRIVATE_KEY = 'WaMpx_5RtESJFHYr6CExwQ7s_2bFE6CEKe2v7N1uMpnw'; // T
 
 let onlineRanking = [];
 
-// Helper para compatibilidad total con hosting HTTPS público y local
+// Helper para obtener la URL de Dreamlo sobre HTTPS con soporte CORS nativo
 function getDreamloUrl(path) {
-    const rawUrl = `http://dreamlo.com/lb/${path}`;
-    // Si la web está alojada en un hosting seguro HTTPS (ej: Netlify, Vercel, GitHub Pages)
-    if (window.location.protocol === 'https:') {
-        return `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
-    }
-    return rawUrl;
+    return `https://dreamlo.com/lb/${path}`;
 }
 
 async function loadRanking() {
@@ -445,6 +440,19 @@ async function loadRanking() {
     }
 }
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/[&<>'"]/g, 
+        tag => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            "'": '&#39;',
+            '"': '&quot;'
+        }[tag] || tag)
+    );
+}
+
 function renderRanking(list) {
     rankingBody.innerHTML = '';
     if (!list || list.length === 0) {
@@ -456,7 +464,7 @@ function renderRanking(list) {
         const medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '';
         tr.innerHTML = `
             <td>${medal}${index + 1}</td>
-            <td>${entry.name}</td>
+            <td>${escapeHTML(entry.name)}</td>
             <td><strong>${entry.score}</strong></td>
         `;
         rankingBody.appendChild(tr);
