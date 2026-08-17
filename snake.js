@@ -428,9 +428,9 @@ async function loadRanking(isBackground = false) {
             }
         }
         
-        // Si no hay caché cargada, mostrar el spinner/cargando
+        // Si no hay caché cargada, mostrar "Sin registros aún" mientras espera
         if (!onlineRanking || onlineRanking.length === 0) {
-            rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity:0.6; color: rgba(238,238,210,0.6);">Cargando Top 10...</td></tr>';
+            rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; opacity:0.6; color: rgba(238,238,210,0.6);">Sin registros aún</td></tr>';
         }
     }
 
@@ -468,22 +468,14 @@ async function loadRanking(isBackground = false) {
     } catch (err) {
         clearTimeout(timeoutId);
         if (err.name === 'AbortError') {
-            console.warn('La petición a Dreamlo excedió el timeout de 6s. Usando datos cacheados/defecto.');
+            console.warn('La petición a Dreamlo excedió el timeout de 6s. Usando datos cacheados/vacíos.');
         } else {
             console.warn('No se pudo conectar con Dreamlo, usando ranking local/caché:', err);
         }
 
-        // Si falló la red y no tenemos nada en caché/memoria, cargamos puntajes por defecto
+        // Si falló la red y no tenemos nada en caché/memoria, simplemente mostrar "Sin registros aún"
         if (!onlineRanking || onlineRanking.length === 0) {
-            onlineRanking = [
-                { name: "Gordi", score: 150 },
-                { name: "Alfy", score: 100 },
-                { name: "Doge", score: 80 },
-                { name: "SnaKe", score: 50 },
-                { name: "Manco", score: 20 }
-            ];
-            localStorage.setItem('snake_online_ranking_cache', JSON.stringify(onlineRanking));
-            renderRanking(onlineRanking);
+            renderRanking([]);
         }
     }
 }
@@ -504,7 +496,7 @@ function escapeHTML(str) {
 function renderRanking(list) {
     rankingBody.innerHTML = '';
     if (!list || list.length === 0) {
-        rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: rgba(238,238,210,0.6);">No hay puntajes aún</td></tr>';
+        rankingBody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: rgba(238,238,210,0.6);">Sin registros aún</td></tr>';
         return;
     }
     list.slice(0, 10).forEach((entry, index) => {
