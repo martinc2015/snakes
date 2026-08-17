@@ -439,9 +439,9 @@ async function loadRanking(isBackground = false) {
         return;
     }
 
-    // Timeout de 2.5s con AbortController
+    // Timeout de 6s con AbortController
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
 
     try {
         const res = await fetch(getDreamloUrl(`${DREAMLO_PUBLIC_KEY}/json/10`), {
@@ -468,14 +468,22 @@ async function loadRanking(isBackground = false) {
     } catch (err) {
         clearTimeout(timeoutId);
         if (err.name === 'AbortError') {
-            console.warn('La petición a Dreamlo excedió el timeout de 2.5s. Usando datos cacheados.');
+            console.warn('La petición a Dreamlo excedió el timeout de 6s. Usando datos cacheados/defecto.');
         } else {
             console.warn('No se pudo conectar con Dreamlo, usando ranking local/caché:', err);
         }
 
-        // Si falló la red y no tenemos nada en caché/memoria, mostramos el ranking local
+        // Si falló la red y no tenemos nada en caché/memoria, cargamos puntajes por defecto
         if (!onlineRanking || onlineRanking.length === 0) {
-            renderLocalRanking();
+            onlineRanking = [
+                { name: "Gordi", score: 150 },
+                { name: "Alfy", score: 100 },
+                { name: "Doge", score: 80 },
+                { name: "SnaKe", score: 50 },
+                { name: "Manco", score: 20 }
+            ];
+            localStorage.setItem('snake_online_ranking_cache', JSON.stringify(onlineRanking));
+            renderRanking(onlineRanking);
         }
     }
 }
