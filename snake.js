@@ -408,9 +408,11 @@ const DREAMLO_PRIVATE_KEY = 'WaMpx_5RtESJFHYr6CExwQ7s_2bFE6CEKe2v7N1uMpnw'; // T
 
 let onlineRanking = [];
 
-// Helper para obtener la URL de Dreamlo sobre HTTPS con soporte CORS nativo
+// Helper para obtener la URL de Dreamlo ruteada a través del proxy CORS seguro de AllOrigins.
+// Esto evita Mixed Content (HTTP/HTTPS) y soluciona el error SSL de Dreamlo en planes gratuitos.
 function getDreamloUrl(path) {
-    return `https://dreamlo.com/lb/${path}`;
+    const rawUrl = `http://dreamlo.com/lb/${path}`;
+    return `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
 }
 
 async function loadRanking(isBackground = false) {
