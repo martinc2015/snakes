@@ -522,21 +522,21 @@ async function saveScore(finalScore) {
                 if (myRank === 1) {
                     banner.classList.add('gold');
                     banner.innerHTML = `
-                        <img src="gordi.png" alt="La Gordi" class="gordi-img"><br>
+                        <img src="gordi.jpg" alt="La Gordi" class="gordi-img"><br>
                         ¡NUEVO RÉCORD #1!<br>
                         <span style="font-size: 1.5rem">¡Felicidades! 🎉</span>
                     `;
                 } else if (myRank === 2) {
                     banner.classList.add('silver');
                     banner.innerHTML = `
-                        <img src="gordi.png" alt="La Gordi" class="gordi-img"><br>
+                        <img src="gordi.jpg" alt="La Gordi" class="gordi-img"><br>
                         ¡NUEVO RÉCORD #2!<br>
                         <span style="font-size: 1.5rem">¡Felicidades! 🎉</span>
                     `;
                 } else if (myRank === 3) {
                     banner.classList.add('bronze');
                     banner.innerHTML = `
-                        <img src="gordi.png" alt="La Gordi" class="gordi-img"><br>
+                        <img src="gordi.jpg" alt="La Gordi" class="gordi-img"><br>
                         ¡NUEVO RÉCORD #3!<br>
                         <span style="font-size: 1.5rem">¡Felicidades! 🎉</span>
                     `;
