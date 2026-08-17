@@ -384,10 +384,12 @@ function placeFood() {
 }
 
 function changeDirection(dir) {
-    if (dir === 'up' && dy !== 1) { nextDx = 0; nextDy = -1; }
-    if (dir === 'down' && dy !== -1) { nextDx = 0; nextDy = 1; }
-    if (dir === 'left' && dx !== 1) { nextDx = -1; nextDy = 0; }
-    if (dir === 'right' && dx !== -1) { nextDx = 1; nextDy = 0; }
+    if (!dir) return;
+    const d = dir.toLowerCase();
+    if (d === 'up' && dy !== 1) { nextDx = 0; nextDy = -1; }
+    if (d === 'down' && dy !== -1) { nextDx = 0; nextDy = 1; }
+    if (d === 'left' && dx !== 1) { nextDx = -1; nextDy = 0; }
+    if (d === 'right' && dx !== -1) { nextDx = 1; nextDy = 0; }
 }
 
 document.addEventListener('keydown', (e) => {
@@ -411,48 +413,39 @@ startBtn.addEventListener('click', resetGame);
 // --- CONTROLES TOUCH EN MÓVIL ---
 let touchStartX = 0;
 let touchStartY = 0;
-const minSwipeDistance = 15; // Bajado a 15px
 
 window.addEventListener('touchstart', (e) => {
-    touchStartX = e.touches[0].clientX;
-    touchStartY = e.touches[0].clientY;
+    if (e.touches && e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
 }, { passive: true });
 
 window.addEventListener('touchmove', (e) => {
-    // Si la partida está activa, evitar scroll para permitir jugar con swipes por toda la pantalla
     if (gameActive) {
-        e.preventDefault();
+        e.preventDefault(); // Evitar scroll de la página mientras se juega
     }
-}, { passive: false });
+    if (!touchStartX || !touchStartY || !e.touches || e.touches.length === 0) return;
 
-window.addEventListener('touchend', (e) => {
-    if (!gameActive) return;
+    let touchEndX = e.touches[0].clientX;
+    let touchEndY = e.touches[0].clientY;
+    let diffX = touchEndX - touchStartX;
+    let diffY = touchEndY - touchStartY;
+    const threshold = 20; // Sensibilidad de 20px
 
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
-
-    // Verificar si supera la distancia mínima de 15px
-    if (Math.abs(diffX) > minSwipeDistance || Math.abs(diffY) > minSwipeDistance) {
-        e.preventDefault(); // Prevenir comportamiento por defecto solo si es un deslizamiento válido
-        
+    if (Math.abs(diffX) > threshold || Math.abs(diffY) > threshold) {
         if (Math.abs(diffX) > Math.abs(diffY)) {
-            // Deslizamiento horizontal
-            if (diffX > 0) {
-                changeDirection('right');
-            } else {
-                changeDirection('left');
-            }
+            // Movimiento horizontal
+            if (diffX > 0) changeDirection('RIGHT');
+            else changeDirection('LEFT');
         } else {
-            // Deslizamiento vertical
-            if (diffY > 0) {
-                changeDirection('down');
-            } else {
-                changeDirection('up');
-            }
+            // Movimiento vertical
+            if (diffY > 0) changeDirection('DOWN');
+            else changeDirection('UP');
         }
+        // Reiniciar origen para encadenar giros fluidos
+        touchStartX = touchEndX;
+        touchStartY = touchEndY;
     }
 }, { passive: false });
 
