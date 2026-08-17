@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Snakes</title>
     <link rel="stylesheet" href="styles.css">
     <style>
@@ -295,6 +295,17 @@
         }
         .diff-btn:active {
             transform: translateY(0);
+        }
+        @media (max-width: 768px) {
+            #snake-canvas {
+                max-width: 95vw;
+                height: auto;
+            }
+            .ranking-area {
+                min-width: auto;
+                width: 100%;
+                max-width: 95vw;
+            }
         }
     </style>
 </head>

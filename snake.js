@@ -401,6 +401,61 @@ document.addEventListener('keydown', (e) => {
 
 startBtn.addEventListener('click', resetGame);
 
+// --- CONTROLES TOUCH EN MÓVIL ---
+let touchStartX = 0;
+let touchStartY = 0;
+const minSwipeDistance = 30;
+
+canvas.addEventListener('touchstart', (e) => {
+    if (gameActive) {
+        e.preventDefault();
+    }
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    if (gameActive) {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    if (gameActive) {
+        e.preventDefault();
+    }
+    
+    if (!gameActive) return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+
+    const diffX = touchEndX - touchStartX;
+    const diffY = touchEndY - touchStartY;
+
+    if (Math.abs(diffX) > minSwipeDistance || Math.abs(diffY) > minSwipeDistance) {
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            // Deslizamiento horizontal
+            if (diffX > 0 && dx !== -1) {
+                nextDx = 1;
+                nextDy = 0;
+            } else if (diffX < 0 && dx !== 1) {
+                nextDx = -1;
+                nextDy = 0;
+            }
+        } else {
+            // Deslizamiento vertical
+            if (diffY > 0 && dy !== -1) {
+                nextDx = 0;
+                nextDy = 1;
+            } else if (diffY < 0 && dy !== 1) {
+                nextDx = 0;
+                nextDy = -1;
+            }
+        }
+    }
+}, { passive: false });
+
 // ---------- SISTEMA DE RANKING (DREAMLO ONLINE) ----------
 // Configuración activa de Dreamlo Cloud Leaderboard
 const DREAMLO_PUBLIC_KEY = '6a8201a18f40bb135064ca7b'; // Tu Public Code activo
